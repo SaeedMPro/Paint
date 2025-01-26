@@ -42,9 +42,38 @@
         CMP     DX, END_ROW     
         JB      ROW_LOOP        
     ENDM
+
+        SELECT_COLOR    MACRO
+        LOCAL   C1, C2, C3, C4, END_CHOOSE
+
+        CMP     DX, 20          
+        JB      C1
+        CMP     DX, 40          
+        JB      C2
+        CMP     DX, 60          
+        JB      C3
+        CMP     DX, 80          
+        JB      C4
+        JMP     END_CHOOSE      
+
+    C1:
+        MOV     PAINT_COLOR, WHITE
+        JMP     END_CHOOSE
+    C2:
+        MOV     PAINT_COLOR, BLUE
+        JMP     END_CHOOSE
+    C3:
+        MOV     PAINT_COLOR, GREEN
+        JMP     END_CHOOSE
+    C4:
+        MOV     PAINT_COLOR, RED
+    END_CHOOSE:
+    ENDM
 ;-------------------------------
 
 
+;PROGRAM
+;-------------------------------
 .MODEL SMALL
 .STACK 64
 
@@ -58,6 +87,8 @@
     START_MSG2      DB  'Paint ProjecT$'
     START_MSG3      DB  'BY : SAEED MAZAHERY$'
     START_MSG4      DB  '<-press any key to start->$'
+
+    PAINT_COLOR     DB  WHITE   ;default color = white
 
 .CODE
 
@@ -90,10 +121,10 @@
         MOV     AL, 13H
         INT     10H         
 
-        DRAW_COLOR_BOX  WHITE, 0,  15
-        DRAW_COLOR_BOX  BLUE,  20, 35
-        DRAW_COLOR_BOX  GREEN, 40, 55
-        DRAW_COLOR_BOX  RED,   60, 75
+        DRAW_COLOR_BOX  WHITE, 0,  20
+        DRAW_COLOR_BOX  BLUE,  20, 40
+        DRAW_COLOR_BOX  GREEN, 40, 60
+        DRAW_COLOR_BOX  RED,   60, 80
 
         ; mouse initialization
         MOV     AX, 00H  
@@ -103,9 +134,32 @@
         MOV     AX, 01H    
         INT     33H     
 
+    PAINT_LOOP:
+    
+        ; get mouse button status
+        MOV     AX, 03H      
+        INT     33H
+        AND     BX, 03H     
+        JZ      PAINT_LOOP  
+
+        ; check for chose color in menu
+        CMP     CX, 10
+        JA      DRAW
+        CMP     DX, 80
+        SELECT_COLOR
+
+    DRAW:
+        
+
+        JMP PAINT_LOOP
+
     EXIT:
+        MOV     AH, 00H
+        MOV     AL, 03H
+        INT     10H
+
         MOV     AH, 4CH
         INT     21H
     MAIN    ENDP
     END     MAIN
-    
+;-----------------------------
