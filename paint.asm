@@ -71,12 +71,12 @@
     ENDM
 ;-------------------------------
 
-
 ;PROGRAM
 ;-------------------------------
+;=============
 .MODEL SMALL
 .STACK 64
-
+;=============
 .DATA
     WHITE           EQU  0FH
     BLUE            EQU  09H
@@ -90,7 +90,7 @@
     START_MSG4      DB  '<-press any key to start->$'
 
     PAINT_COLOR     DB  WHITE   ;default color = white
-
+;=============
 .CODE
 
     MAIN    PROC    FAR
@@ -178,11 +178,12 @@
         CMP     BX, 01H
         JE      WAIT_RELEASE
 
-        ;draw line with: start point(DI, SI) to end point(DX, CX)
+        ;draw line with: start point(SI, DI) to end point(CX, DX)
         CALL    DRAW_LINE
         JMP     PAINT_LOOP
     LEFT_CLICK:
-        FILL_PIXEL   BLACK
+
+        CALL    ERASER
         JMP PAINT_LOOP
 
     EXIT:
@@ -198,13 +199,67 @@
 ;PROCEDURE
 ;----------------------------------
 
-;----------------------------------
-; PROCEDURE: DRAW_LINE
-; Input: SI = start X, DI = start Y, CX = end X, DX = end Y
-; Output: Draws a line from (SI, DI) to (CX, DX)
-;----------------------------------
+;=============
 DRAW_LINE   PROC    NEAR
+        ; Save registers
+        PUSH    AX
+        PUSH    BX
+        PUSH    CX
+        PUSH    DX
+        PUSH    SI
+        PUSH    DI
 
-DRAW_LINE   ENDP    
 
+
+
+    DONE:
+        ; Restore registers
+        POP     DI
+        POP     SI
+        POP     DX
+        POP     CX
+        POP     BX
+        POP     AX
+        RET
+DRAW_LINE   ENDP 
+;=============
+PROC    ERASER  NEAR
+        ; Save registers
+        PUSH    AX
+        PUSH    BX
+        PUSH    CX
+        PUSH    DX
+        PUSH    SI
+        PUSH    DI
+
+        FILL_PIXEL  BLACK
+        INC         CX
+        FILL_PIXEL  BLACK
+        INC         DX
+        FILL_PIXEL  BLACK
+        DEC         DX 
+        DEC         DX         
+        FILL_PIXEL  BLACK
+        DEC         CX
+        FILL_PIXEL  BLACK
+        DEC         CX
+        FILL_PIXEL  BLACK
+        INC         DX         
+        FILL_PIXEL  BLACK
+        INC         DX         
+        FILL_PIXEL  BLACK
+        INC         CX         
+        FILL_PIXEL  BLACK
+
+    DONE:
+        ; Restore registers
+        POP     DI
+        POP     SI
+        POP     DX
+        POP     CX
+        POP     BX
+        POP     AX
+        RET 
+ERASER  ENDP
+;=============
 ;----------------------------------
