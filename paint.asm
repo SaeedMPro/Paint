@@ -36,14 +36,14 @@
     COL_LOOP:
         FILL_PIXEL  COLOR      
         INC     CX             
-        CMP     CX, 10        
+        CMP     CX, 15        
         JB      COL_LOOP       
         INC     DX             
         CMP     DX, END_ROW     
         JB      ROW_LOOP        
     ENDM
 
-        SELECT_COLOR    MACRO
+    CHOSE_COLOR    MACRO
         LOCAL   C1, C2, C3, C4, END_CHOOSE
 
         CMP     DX, 20          
@@ -82,6 +82,7 @@
     BLUE            EQU  09H
     GREEN           EQU  0AH
     RED             EQU  0CH
+    BLACK           EQU  00H
 
     START_MSG1      DB  '=-----= WELCOME =-----=$'
     START_MSG2      DB  'Paint ProjecT$'
@@ -141,16 +142,47 @@
         INT     33H
         AND     BX, 03H     
         JZ      PAINT_LOOP  
+        
+        ;in 320*200 video mode cx is doubled so:
+        SHR     CX, 1
 
         ; check for chose color in menu
-        CMP     CX, 10
-        JA      DRAW
-        CMP     DX, 80
-        SELECT_COLOR
+        CMP     CX, 0FH
+        JA      HANDLE_CLICK
+        CMP     DX, 81
+        JB      SELECT_COLOR
 
-    DRAW:
+    HANDLE_CLICK:
+
+        ;check for left or right click
+        CMP     BX, 01H
+        JE      RIGHT_CLICK
         
+        CMP     BX, 02H
+        JE      LEFT_CLICK
 
+    SELECT_COLOR:
+        CHOSE_COLOR
+        JMP     PAINT_LOOP
+
+    RIGHT_CLICK:
+
+        ; store start mouse position for drawing
+        MOV     SI, CX      
+        MOV     DI, DX
+
+        ; Wait for button release
+    WAIT_RELEASE:
+        MOV     AX, 3
+        INT     33H
+        CMP     BX, 01H
+        JE      WAIT_RELEASE
+
+        ;draw line with: start point(DI, SI) to end point(DX, CX)
+        CALL    DRAW_LINE
+        JMP     PAINT_LOOP
+    LEFT_CLICK:
+        FILL_PIXEL   BLACK
         JMP PAINT_LOOP
 
     EXIT:
@@ -161,5 +193,18 @@
         MOV     AH, 4CH
         INT     21H
     MAIN    ENDP
-    END     MAIN
-;-----------------------------
+;----------------------------------
+
+;PROCEDURE
+;----------------------------------
+
+;----------------------------------
+; PROCEDURE: DRAW_LINE
+; Input: SI = start X, DI = start Y, CX = end X, DX = end Y
+; Output: Draws a line from (SI, DI) to (CX, DX)
+;----------------------------------
+DRAW_LINE   PROC    NEAR
+
+DRAW_LINE   ENDP    
+
+;----------------------------------
