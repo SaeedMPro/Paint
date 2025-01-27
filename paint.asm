@@ -78,18 +78,29 @@
 .STACK 64
 ;=============
 .DATA
+    START_MSG1      DB  '=-----= WELCOME =-----=$'
+    START_MSG2      DB  'Paint Project$'
+    START_MSG3      DB  'BY : SAEED MAZAHERY$'
+    START_MSG4      DB  '<-press any key to start->$'
+
+    ;colors
     WHITE           EQU  0FH
     BLUE            EQU  09H
     GREEN           EQU  0AH
     RED             EQU  0CH
     BLACK           EQU  00H
-
-    START_MSG1      DB  '=-----= WELCOME =-----=$'
-    START_MSG2      DB  'Paint ProjecT$'
-    START_MSG3      DB  'BY : SAEED MAZAHERY$'
-    START_MSG4      DB  '<-press any key to start->$'
-
     PAINT_COLOR     DB  WHITE   ;default color = white
+
+    ;for draw line
+    POS_X1          DW  ?
+    POS_Y1          DW  ?
+    POS_X2          DW  ?
+    POS_Y2          DW  ?
+    DELTA_X         DW  ?
+    DELTA_Y         DW  ? 
+    X_DIR           DW  ?
+    Y_DIR           DW  ?
+    DECISION        DW  ?
 ;=============
 .CODE
 
@@ -168,8 +179,8 @@
     RIGHT_CLICK:
 
         ; store start mouse position for drawing
-        MOV     SI, CX      
-        MOV     DI, DX
+        MOV [POS_X1], CX
+        MOV [POS_Y1], DX
 
         ; Wait for button release
     WAIT_RELEASE:
@@ -178,13 +189,21 @@
         CMP     BX, 01H
         JE      WAIT_RELEASE
 
+        ;in 320*200 video mode cx is doubled so:
+        SHR     CX, 1
+
+        ; store start mouse position for drawing
+        MOV [POS_X2], CX
+        MOV [POS_Y2], DX
+
         ;draw line with: start point(SI, DI) to end point(CX, DX)
         CALL    DRAW_LINE
         JMP     PAINT_LOOP
     LEFT_CLICK:
 
+        ;erases a 3x3 square around the clicked pixel.
         CALL    ERASER
-        JMP PAINT_LOOP
+        JMP     PAINT_LOOP
 
     EXIT:
         MOV     AH, 00H
@@ -200,6 +219,12 @@
 ;----------------------------------
 
 ;=============
+;----------------------------------
+; PROCEDURE: DRAW_LINE (Bresenham's Line Algorithm)
+; Input: [POS_X1], [POS_Y1] = Start point 
+;        [POS_X2], [POS_Y2] = End point 
+; Output: Draws a line from start point to end point
+;----------------------------------
 DRAW_LINE   PROC    NEAR
         ; Save registers
         PUSH    AX
@@ -209,9 +234,83 @@ DRAW_LINE   PROC    NEAR
         PUSH    SI
         PUSH    DI
 
+        ; Load coordinates
+        MOV     CX, [POS_X1]
+        MOV     DX, [POS_Y1]
+        MOV     SI, [POS_X2]
+        MOV     DI, [POS_Y2]
 
+        ; Calculate DELTA_X (POS_X2 - POS_X1)
+        MOV     AX, SI
+        SUB     AX, CX
+        MOV     [DELTA_X], AX
 
+        ; Calculate DELTA_Y (POS_Y2 - POS_Y1)
+        MOV     AX, DI
+        SUB     AX, DX
+        MOV     [DELTA_Y], AX
 
+        ; Determine X_DIR
+        MOV     CX, 1
+        CMP     [DELTA_X], 0
+        JGE     X_POSITIVE
+        NEG     [DELTA_X]
+        NEG     CX
+    X_POSITIVE:
+        MOV     [X_DIR], CX
+
+        ; Determine Y_DIR
+        MOV     CX, 1
+        CMP     [DELTA_Y], 0
+        JGE     Y_POSITIVE
+        NEG     [DELTA_Y]
+        NEG     CX
+    Y_POSITIVE:
+        MOV     [Y_DIR], CX
+
+        ; Initialize decision parameter
+        MOV     AX, [DELTA_Y]
+        SHL     AX, 1
+        SUB     AX, [DELTA_X]
+        MOV     [DECISION], AX
+
+        ; Initialize start point
+        MOV     CX, [POS_X1]
+        MOV     DX, [POS_Y1]
+
+        ; Plot the line
+    DRAW_LOOP:
+        ; Plot pixel at (CX, DX)
+        FILL_PIXEL  PAINT_COLOR
+
+        ; Check if we reached the end
+        CMP     CX, [POS_X2]
+        JNE     CONTINUE
+        CMP     DX, [POS_Y2]
+        JE      DONE
+
+    CONTINUE:
+        ; Update decision parameter
+        MOV     AX, [DECISION]
+        CMP     AX, 0
+        JL      UPDATE_X
+
+        ; Move diagonally (update y and error)
+        ADD     DX, [Y_DIR]
+        SUB     AX, [DELTA_X]
+        SUB     AX, [DELTA_X]
+        MOV     [DECISION], AX
+
+    UPDATE_X:
+        ; Move horizontally (update x and error)
+        ADD     CX, [X_DIR]
+        ADD     AX, [DELTA_Y]
+        ADD     AX, [DELTA_Y]
+        MOV     [DECISION], AX
+
+        ; Repeat loop
+        JMP         DRAW_LOOP
+        
     DONE:
         ; Restore registers
         POP     DI
@@ -221,8 +320,14 @@ DRAW_LINE   PROC    NEAR
         POP     BX
         POP     AX
         RET
-DRAW_LINE   ENDP 
+DRAW_LINE   ENDP
+
 ;=============
+;----------------------------------
+; PROCEDURE: ERASER
+; Input: CX, DX = center point  
+; Output: Erases a 3x3 square around the clicked pixel.
+;----------------------------------
 PROC    ERASER  NEAR
         ; Save registers
         PUSH    AX
@@ -231,7 +336,7 @@ PROC    ERASER  NEAR
         PUSH    DX
         PUSH    SI
         PUSH    DI
-
+        
         FILL_PIXEL  BLACK
         INC         CX
         FILL_PIXEL  BLACK
@@ -251,7 +356,6 @@ PROC    ERASER  NEAR
         INC         CX         
         FILL_PIXEL  BLACK
 
-    DONE:
         ; Restore registers
         POP     DI
         POP     SI
