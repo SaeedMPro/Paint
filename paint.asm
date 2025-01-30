@@ -226,102 +226,97 @@
 ; Output: Draws a line from start point to end point
 ;----------------------------------
 DRAW_LINE   PROC    NEAR
-        ; Save registers
-        PUSH    AX
-        PUSH    BX
-        PUSH    CX
-        PUSH    DX
-        PUSH    SI
-        PUSH    DI
 
-        ; Load coordinates
-        MOV     CX, [POS_X1]
-        MOV     DX, [POS_Y1]
-        MOV     SI, [POS_X2]
-        MOV     DI, [POS_Y2]
+    ; Load coordinates
+    MOV     CX, [POS_X1]
+    MOV     DX, [POS_Y1]
+    MOV     SI, [POS_X2]
+    MOV     DI, [POS_Y2]
 
-        ; Calculate DELTA_X (POS_X2 - POS_X1)
-        MOV     AX, SI
-        SUB     AX, CX
-        MOV     [DELTA_X], AX
+    ; Calculate DELTA_X (POS_X2 - POS_X1)
+    MOV     AX, SI
+    SUB     AX, CX
+    MOV     [DELTA_X], AX
 
-        ; Calculate DELTA_Y (POS_Y2 - POS_Y1)
-        MOV     AX, DI
-        SUB     AX, DX
-        MOV     [DELTA_Y], AX
+    ; Calculate DELTA_Y (POS_Y2 - POS_Y1)
+    MOV     AX, DI
+    SUB     AX, DX
+    MOV     [DELTA_Y], AX
 
-        ; Determine X_DIR
-        MOV     CX, 1
-        CMP     [DELTA_X], 0
-        JGE     X_POSITIVE
-        NEG     [DELTA_X]
-        NEG     CX
-    X_POSITIVE:
-        MOV     [X_DIR], CX
+    ; Determine X_DIR
+    MOV     CX, 1
+    CMP     [DELTA_X], 0
+    JGE     X_POSITIVE
+    NEG     [DELTA_X]
+    NEG     CX
+X_POSITIVE:
+    MOV     [X_DIR], CX
 
-        ; Determine Y_DIR
-        MOV     CX, 1
-        CMP     [DELTA_Y], 0
-        JGE     Y_POSITIVE
-        NEG     [DELTA_Y]
-        NEG     CX
-    Y_POSITIVE:
-        MOV     [Y_DIR], CX
+    ; Determine Y_DIR
+    MOV     CX, 1
+    CMP     [DELTA_Y], 0
+    JGE     Y_POSITIVE
+    NEG     [DELTA_Y]
+    NEG     CX
+Y_POSITIVE:
+    MOV     [Y_DIR], CX
 
-        ; Initialize decision parameter
-        MOV     AX, [DELTA_Y]
-        SHL     AX, 1
-        SUB     AX, [DELTA_X]
-        MOV     [DECISION], AX
+    ; Initialize decision parameter
+    MOV     AX, [DELTA_Y]
+    SHL     AX, 1
+    SUB     AX, [DELTA_X]
+    MOV     [DECISION], AX
 
-        ; Initialize start point
-        MOV     CX, [POS_X1]
-        MOV     DX, [POS_Y1]
+    ; Initialize start point
+    MOV     CX, [POS_X1]
+    MOV     DX, [POS_Y1]
 
-        ; Plot the line
-    DRAW_LOOP:
-        ; Plot pixel at (CX, DX)
-        FILL_PIXEL  PAINT_COLOR
+    ; Plot the line
+DRAW_LOOP:
+    ; Plot pixel at (CX, DX)
+    FILL_PIXEL  PAINT_COLOR
+                     
+    XOR     AX, AX                 
+    ; Check if CX reached POS_X2
+    CMP     CX, [POS_X2]
+    JNE     CHECK_DY
+    INC     AX  
 
-        ; Check if we reached the end
-        CMP     CX, [POS_X2]
-        JNE     CONTINUE
-        CMP     DX, [POS_Y2]
-        JE      DONE
+CHECK_DY:
+    ; Check if DX reached POS_Y2
+    CMP     DX, [POS_Y2]
+    JNE     CONTINUE
+    INC     AX  
 
-    CONTINUE:
-        ; Update decision parameter
-        MOV     AX, [DECISION]
-        CMP     AX, 0
-        JL      UPDATE_X
+    ; Check COUNTER (AX) 
+    ;To if at least one of the points has reached its limit or not
+    CMP     AX, 0
+    JG      DONE 
 
-        ; Move diagonally (update y and error)
-        ADD     DX, [Y_DIR]
-        SUB     AX, [DELTA_X]
-        SUB     AX, [DELTA_X]
-        MOV     [DECISION], AX
+CONTINUE:
+    ; Update decision parameter
+    MOV     AX, [DECISION]
+    CMP     AX, 0
+    JL      UPDATE_X
 
-    UPDATE_X:
-        ; Move horizontally (update x and error)
-        ADD     CX, [X_DIR]
-        ADD     AX, [DELTA_Y]
-        ADD     AX, [DELTA_Y]
-        MOV     [DECISION], AX
+    ; Move diagonally (update y and DECISION)
+    ADD     DX, [Y_DIR]
+    SUB     AX, [DELTA_X]
+    SUB     AX, [DELTA_X]
+    MOV     [DECISION], AX
 
-        ; Repeat loop
-        JMP         DRAW_LOOP
-        
-    DONE:
-        ; Restore registers
-        POP     DI
-        POP     SI
-        POP     DX
-        POP     CX
-        POP     BX
-        POP     AX
-        RET
+UPDATE_X:
+    ; Move horizontally (update x and DECISION)
+    ADD     CX, [X_DIR]
+    ADD     AX, [DELTA_Y]
+    ADD     AX, [DELTA_Y]
+    MOV     [DECISION], AX
+
+    ; Repeat loop
+    JMP     DRAW_LOOP 
+DONE:
+    RET
 DRAW_LINE   ENDP
-
 ;=============
 ;----------------------------------
 ; PROCEDURE: ERASER
@@ -329,13 +324,6 @@ DRAW_LINE   ENDP
 ; Output: Erases a 3x3 square around the clicked pixel.
 ;----------------------------------
 PROC    ERASER  NEAR
-        ; Save registers
-        PUSH    AX
-        PUSH    BX
-        PUSH    CX
-        PUSH    DX
-        PUSH    SI
-        PUSH    DI
         
         FILL_PIXEL  BLACK
         INC         CX
@@ -356,13 +344,6 @@ PROC    ERASER  NEAR
         INC         CX         
         FILL_PIXEL  BLACK
 
-        ; Restore registers
-        POP     DI
-        POP     SI
-        POP     DX
-        POP     CX
-        POP     BX
-        POP     AX
         RET 
 ERASER  ENDP
 ;=============
