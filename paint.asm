@@ -210,7 +210,7 @@ ENDM
 
         MOV     AH, 4CH
         INT     21H
-    MAIN    ENDP
+MAIN    ENDP
 ;----------------------------------
 
 ;PROCEDURE
@@ -287,7 +287,7 @@ DRAW_LINE   PROC    NEAR
 DRAW_LINE ENDP
 
 ;----------------------------------
-; HORIZONTAL LINE ALGORITHM (|Δx| > |Δy|)
+; HORIZONTAL LINE ALGORITHM (|dx| > |dy|)
 ;----------------------------------
 DRAW_HLINE  PROC    NEAR
         PUSHA
@@ -303,7 +303,7 @@ DRAW_HLINE  PROC    NEAR
         MOV [POS_Y1], AX
 
     NO_SWAP_X:
-        ; Calculate Δx and Δy
+        ; Calculate dx and dy
         MOV AX, [POS_X2]
         SUB AX, [POS_X1]
         MOV [DELTA_X], AX
@@ -365,7 +365,7 @@ DRAW_HLINE  PROC    NEAR
 DRAW_HLINE ENDP
 
 ;----------------------------------
-; VERTICAL LINE ALGORITHM (|Δy| >= |Δx|)
+; VERTICAL LINE ALGORITHM (|dy| >= |dx|)
 ;----------------------------------
 DRAW_VERTICAL   PROC    NEAR
         PUSHA
@@ -381,7 +381,7 @@ DRAW_VERTICAL   PROC    NEAR
         MOV [POS_X1], AX
 
     NO_SWAP_Y:
-        ; Calculate Δx and Δy
+        ; Calculate dx and dy
         MOV AX, [POS_Y2]
         SUB AX, [POS_Y1]
         MOV [DELTA_Y], AX
