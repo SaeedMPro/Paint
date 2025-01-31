@@ -32,12 +32,10 @@ DRAW_COLOR_BOX  MACRO   COLOR, START_ROW, END_ROW
         LOCAL   ROW_LOOP, COL_LOOP
         MOV     DX, START_ROW
     ROW_LOOP:
-        MOV     CX, 0           
+        MOV     CX, 16           
     COL_LOOP:
-        FILL_PIXEL  COLOR      
-        INC     CX             
-        CMP     CX, 15        
-        JB      COL_LOOP       
+        FILL_PIXEL  COLOR                         
+        LOOP      COL_LOOP       
         INC     DX             
         CMP     DX, END_ROW     
         JB      ROW_LOOP        
