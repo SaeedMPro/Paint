@@ -37,3 +37,7 @@ This is a simple paint program written in x86 assembly language. It uses BIOS an
     - DRAW_LINE
     - DRAW_HLINE
     - DRAW_VERTICAL
+
+# View
+![image](https://github.com/user-attachments/assets/5cb45c5e-c0b7-453d-a656-4128d843cc5c) ![image](https://github.com/user-attachments/assets/7645300b-ccf1-4350-96ab-110e983635ee)
+
